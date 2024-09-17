@@ -14,13 +14,13 @@ library(ggplot2)  # v3.4.2
 options(dplyr.summarise.inform = FALSE)
 
 # data input directory
-SRCDIR <- '/home/jwojcik/d2t/onedrive/04_Customers/PF04_IGR/PF04.01_TOPOSCORE/standalone_input/'
+SRCDIR <- '/Users/abhilashdhal/Desktop/TOPOSCORE/TOPOSCORE'
 message('Data source directory: ', SRCDIR)
 
 # Expected input files (in SRCDIR):
 FILES = list(
   ONCO_CLIN = 'DS1_oncology_clinical_data.csv', 
-  ONCO_MET4 = 'DS2_oncology_microbiome_data.csv',
+  ONCO_MET4 = 'DS2_oncology_microbiome_data_DiscValid.csv',
   HD_CLIN = 'DS3_healthy_donor_clinical_data.csv', 
   HD_MET4 = 'DS4_healthy_donor_microbiome_data.csv',
   LONGITUDINAL_CLIN = 'DS5_longitudinal_clinical_data.csv', 
@@ -57,7 +57,6 @@ GRAPHICS <- list(
 ################################################################################
 # util functions
 ################################################################################
-
 
 #' Logging util
 log_msg <- function(...) {
@@ -180,15 +179,52 @@ load_clin <- function(cohort, dir = SRCDIR) {
 
 
 #' Load microbiome data 
-load_microbiome <- function(clin, dir = SRCDIR) {
+# load_microbiome <- function(clin, dir = SRCDIR) {
+#   met4 <- if (unique(clin$Cohort) == 'Healthy') 
+#     read_csv(file.path(dir, FILES$HD_MET4))
+#   else
+#     read_csv(file.path(dir, FILES$ONCO_MET4)) %>% filter(Sample_id %in% clin$Sample_id)
+  
+#   # Remove columns starting with "GGB"
+#   ggb_columns <- grep("^GGB", names(met4), value = TRUE)
+#   met4 <- met4 %>% select(-all_of(ggb_columns))
+  
+#   log_msg('Reading %s microbiome data records', nrow(met4))
+#   log_msg('Removed %d columns starting with "GGB"', length(ggb_columns))
+  
+#   met4
+# }
+
+#' Load microbiome data, calculate prevalence, and filter low-prevalence species
+load_microbiome <- function(clin, dir = SRCDIR, prevalence_threshold = 0.025) {
   met4 <- if (unique(clin$Cohort) == 'Healthy') 
     read_csv(file.path(dir, FILES$HD_MET4))
   else
     read_csv(file.path(dir, FILES$ONCO_MET4)) %>% filter(Sample_id %in% clin$Sample_id)
+  
+  # Remove columns starting with "GGB"
+  ggb_columns <- grep("^GGB", names(met4), value = TRUE)
+  met4 <- met4 %>% select(-all_of(ggb_columns))
+  
+  # Calculate prevalence
+  species_columns <- setdiff(names(met4), "Sample_id")
+  prevalence <- met4 %>%
+    select(all_of(species_columns)) %>%
+    summarise(across(everything(), ~mean(. > 0)))
+  
+  # Filter species based on prevalence
+  high_prevalence_species <- names(prevalence)[prevalence >= prevalence_threshold]
+  
+  # Keep only high prevalence species and Sample_id
+  met4_filtered <- met4 %>% select(Sample_id, all_of(high_prevalence_species))
+  
   log_msg('Reading %s microbiome data records', nrow(met4))
-  met4
+  log_msg('Removed %d columns starting with "GGB"', length(ggb_columns))
+  log_msg('Kept %d/%d species with prevalence >= %.1f%%', 
+          length(high_prevalence_species), length(species_columns), prevalence_threshold * 100)
+  
+  met4_filtered
 }
-
 
 
 load_microbiome_longitudinal <- function(filename = FILES$LONGITUDINAL_MET4, dir = SRCDIR) {
