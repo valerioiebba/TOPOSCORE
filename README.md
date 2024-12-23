@@ -7,7 +7,7 @@ A Shiny application for calculating Toposcores from microbiome data to predict i
 
 Live demo: [Toposcore Calculator](https://toposcore.shinyapps.io/toposcore-calculator/)
 
-## For Clinicians: Using the Web Interface
+## USING THE WEB INTERFACE
 
 ### Quick Start
 1. Visit [https://toposcore.shinyapps.io/toposcore-calculator/](https://toposcore.shinyapps.io/toposcore-calculator/)
@@ -55,7 +55,7 @@ Live demo: [Toposcore Calculator](https://toposcore.shinyapps.io/toposcore-calcu
 - "Download Results Table": Save complete results as CSV
 - "Download Plot": Save the score distribution plot as PDF
 
-## For Developers: Building and Modifying the App
+## BUILDING AND MODIFYING THE APP
 
 ### Prerequisites
 - R (>= 4.0.0)
