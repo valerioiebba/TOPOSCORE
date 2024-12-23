@@ -14,13 +14,13 @@ library(ggplot2)  # v3.4.2
 options(dplyr.summarise.inform = FALSE)
 
 # data input directory
-SRCDIR <- '/Users/abhilashdhal/Desktop/TOPOSCORE/TOPOSCORE'
+SRCDIR <- '/Users/abhilashdhal/Desktop/TOPOSCORE_dev/TOPOSCORE'
 message('Data source directory: ', SRCDIR)
 
 # Expected input files (in SRCDIR):
 FILES = list(
   ONCO_CLIN = 'DS1_oncology_clinical_data.csv', 
-  ONCO_MET4 = 'DS2_oncology_microbiome_data_DiscValid.csv',
+  ONCO_MET4 = 'DS2_oncology_microbiome_data_OLD.csv',
   HD_CLIN = 'DS3_healthy_donor_clinical_data.csv', 
   HD_MET4 = 'DS4_healthy_donor_microbiome_data.csv',
   LONGITUDINAL_CLIN = 'DS5_longitudinal_clinical_data.csv', 
@@ -807,37 +807,96 @@ compute_toposcore <- function(met4, sigb1, sigb2) {
   
 }
 
-
-
 plot_toposcore_density <- function(scores, clin, var = 'TOPO', color = 'OS12bis', 
-                                   xlim = NULL, grey = NULL) {
+                                 xlim = NULL, grey = NULL) {
   
+  # Join data and create OS category
   data <- scores %>% 
-    left_join(clin, by = 'Sample_id')
+    left_join(clin, by = 'Sample_id') %>%
+    mutate(OS_category = ifelse(OS < 12, "OS<12", "OS≥12"))
   
-  if (color == 'OS12bis')
-    data <- data %>% mutate(OS12bis = ifelse(OS12 == '', '?', OS12))
+  # Create the plot
+  plt <- ggplot(data, aes(x = .data[[var]], fill = OS_category)) +
+    # Add density plots for each OS category
+    geom_density(alpha = 0.8) +
+    # Add vertical lines for cutoffs
+    geom_vline(xintercept = grey, 
+              color = "black", 
+              linewidth = 0.5,
+              linetype = "solid") +
+    # Set colors for OS categories
+    scale_fill_manual(values = c(
+      "OS<12" = "#000000",    # black for OS<12
+      "OS≥12" = "#99FF99"       # Light green for OS≥12
+    )) +
+    # Customize theme
+    theme_minimal() +
+    theme(
+      panel.grid = element_blank(),
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 14),
+      legend.position = "top",
+      legend.title = element_blank()
+    ) +
+    # Labels
+    labs(x = "Score",
+         y = "Density") +
+    # Add region labels with percentages
+    annotate("text", x = 0.3, y = 1.8, 
+            label = "SIG1\n68%OS<12", 
+            color = "black",
+            size = 2.5) +
+    annotate("text", x = 0.66, y = 2.5, 
+            label = "Gray zone", 
+            color = "black", 
+            size = 2.5) +
+    annotate("text", x = 0.9, y = 1.8, 
+            label = "SIG2\n21%OS<12", 
+            color = "darkgreen", 
+            size = 2.5)
   
-  data <- data[!is.na(data[[color]]) & data[[color]] != '', ]
-  
-  plt <- ggplot(data, aes(x = .data[[var]], color = .data[[color]], fill = .data[[color]])) + 
-    geom_density(alpha = 0.25) +
-    scale_color_manual(values = color_values(color, data)) +
-    scale_fill_manual(values = color_values(color, data)) +
-    GRAPHICS$THEME
-  
-  if (!is.null(grey)) plt <- plt + geom_vline(xintercept = grey, color = 'dark gray', linewidth = 1.5)
+  # Add limits if specified
   if (!is.null(xlim)) plt <- plt + xlim(xlim)
   
   plt
+}
+
+plot_toposcoreb01_density <- function(scores, clin, resp = 'OS12', lims = c(0.535, 0.791)) {
+  plot_toposcore_density(scores, clin, 
+                        var = 'TOPOB01', 
+                        xlim = c(0, 1), 
+                        grey = lims)
+}
+### OLD Plotting code 
+# plot_toposcore_density <- function(scores, clin, var = 'TOPO', color = 'OS12bis', 
+#                                    xlim = NULL, grey = NULL) {
   
-}
+#   data <- scores %>% 
+#     left_join(clin, by = 'Sample_id')
+  
+#   if (color == 'OS12bis')
+#     data <- data %>% mutate(OS12bis = ifelse(OS12 == '', '?', OS12))
+  
+#   data <- data[!is.na(data[[color]]) & data[[color]] != '', ]
+  
+#   plt <- ggplot(data, aes(x = .data[[var]], color = .data[[color]], fill = .data[[color]])) + 
+#     geom_density(alpha = 0.25) +
+#     scale_color_manual(values = color_values(color, data)) +
+#     scale_fill_manual(values = color_values(color, data)) +
+#     GRAPHICS$THEME
+  
+#   if (!is.null(grey)) plt <- plt + geom_vline(xintercept = grey, color = 'dark gray', linewidth = 1.5)
+#   if (!is.null(xlim)) plt <- plt + xlim(xlim)
+  
+#   plt
+  
+# }
 
 
-plot_toposcoreb01_density <- function(scores, clin, resp = 'OS12', lims = c(0.5, 0.75)) {
-  plot_toposcore_density(scores, clin, var = 'TOPOB01', color = resp, xlim = c(0, 1), grey = lims) +
-    xlab('Score')
-}
+# plot_toposcoreb01_density <- function(scores, clin, resp = 'OS12', lims = c(0.5, 0.75)) {
+#   plot_toposcore_density(scores, clin, var = 'TOPOB01', color = resp, xlim = c(0, 1), grey = lims) +
+#     xlab('Score')
+# }
 
 
 assign_prediction <- function(pred, cut_r = 0.75, cut_nr = 0.5, verbose = TRUE) {
