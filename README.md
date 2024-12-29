@@ -1,6 +1,12 @@
 # Custom scoring based on ecological topology of gut microbiota associated with cancer immunotherapy outcome. 
 The gut microbiota influences clinical responses of cancer patients to immune checkpoint inhibitors. However, there is no consensus definition of detrimental dysbiosis. Based on metagenomics (MG) sequencing of 245 non-small cell lung cancer (NSCLC) patient feces, we constructed species-level co-abundance networks that were clustered into species interacting groups (SIG) correlating with overall survival. Thirty-seven and 45 MG species were associated with resistance (SIG1) and response (SIG2) to ICI, respectively. If combined with the quantification of Akkermansia species, this procedure allowed a person-based calculation of a topological score (TOPOSCORE) that was validated in additional 254 NSCLC patients and in 216 genitourinary cancers. Finally, this TOPOSCORE was translated into a 21 bacterial probe set-based qPCR- scoring that was validated in a prospective cohort of NSCLC patients, as well as in colorectal and melanoma patients. This approach could represent a dynamic diagnosis tool of intestinal dysbiosis to guide personalized microbiota-centered interventions.
 
+[LINK](https://www.cell.com/cell/fulltext/S0092-8674(24)00538-5?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867424005385%3Fshowall%3Dtrue) to the orginial article
+
+If you find it useful, please cite:
+Derosa, Lisa, Valerio Iebba, Carolina Alves Costa Silva, Gianmarco Piccinno, Guojun Wu, Leonardo Lordello, Bertrand Routy, et al. “Custom Scoring Based on Ecological Topology of Gut Microbiota Associated with Cancer Immunotherapy Outcome.” Cell (Elsevier BV, June 2024). https://doi.org/10.1016/j.cell.2024.05.029.
+ 
+
 # Toposcore Calculator
 
 A Shiny application for calculating Toposcores from microbiome data to predict immunotherapy response.
