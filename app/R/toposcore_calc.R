@@ -4,7 +4,7 @@ library(readr)
 calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21", "SGB_Jan21", "GTDB_r207", "GTDB_r220")) {
   
   # Read the data
-  data <- read_tsv(input_file)
+  data <- read_tsv(input_file, name_repair = "minimal")
   sampleIDs <- data$Sample_id
   data <- data %>% select(-Sample_id)
   
