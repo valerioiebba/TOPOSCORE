@@ -3,10 +3,83 @@ library(readr)
 
 calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21", "SGB_Jan21", "GTDB_r207", "GTDB_r220")) {
   
-  # Read the data
-  data <- read_tsv(input_file, name_repair = "minimal")
-  sampleIDs <- data$Sample_id
-  data <- data %>% select(-Sample_id)
+  # Read-in the data for MetaPhlAn format
+  if(taxonomy_database == "species_Jan21" | taxonomy_database == "SGB_Jan21") {
+    data <- read_tsv(input_file, name_repair = "minimal", comment = "#")
+    if(length(grep("\\|", data$clade_name)) == 0) {
+      stop("It appears as the taxonomy separator in your table is not in standard MetaPhlAn format, i.e k__|p__")
+    }
+    else {
+      taxa <- data$clade_name
+      data <- data %>% select(-clade_name)
+      sampleIDs <- colnames(data)
+      data <- as_tibble(t(data))
+      colnames(data) <- taxa
+    }
+  }
+  
+  # Read-in the data for GTDB format
+  if(taxonomy_database == "GTDB_r207" | taxonomy_database == "GTDB_r220") {
+    data <- read_tsv(input_file, name_repair = "minimal", comment = "#")
+    if(length(grep(";", data$clade_name)) == 0) {
+      stop("It appears as the taxonomy separator in your table is not in standard GTDB format, i.e d__;p__")
+    }
+    else {
+      taxa <- data$clade_name
+      data <- data %>% select(-clade_name)
+      sampleIDs <- colnames(data)
+      data <- as_tibble(t(data))
+      colnames(data) <- taxa
+      data <- data[,colnames(data)[which(unlist(lapply(colnames(data), function(x) {length(unlist(strsplit(x, ";"))) })) >= 7)]]
+      colnames(data) <- lapply(colnames(data), function(x) {unlist(strsplit(x, ";"))[7] } )
+      #Sum and remove duplicate columns 
+      col_names <- names(data)
+      dup_names <- unique(col_names[duplicated(col_names)])
+      data_subset <- data[, !col_names %in% dup_names]
+      # Add summed columns for each duplicated name
+      for (dup_name in dup_names) {
+        cols <- which(col_names == dup_name)
+        data_subset[[dup_name]] <- rowSums(data[, cols])
+      }
+      data <- data_subset
+    }
+  }
+  
+  if (taxonomy_database == "species_Jan21") {
+    SGB9226 <- ifelse(length(grep("SGB9226$", colnames(data))) > 0, TRUE, FALSE)
+    if (SGB9226 == TRUE) {
+      akk_sgb9226_ab <- data %>% select(grep("SGB9226$", colnames(data)))
+    }
+    data <- data[,colnames(data)[which(unlist(lapply(colnames(data), function(x) {length(unlist(strsplit(x, "\\|"))) })) >= 7)]]
+    colnames(data) <- unlist(lapply(colnames(data), function(x) {unlist(strsplit(x, "\\|"))[7] } ))
+    colnames(data) <- gsub("s__", "", colnames(data))
+    #Sum and remove duplicate columns 
+    col_names <- names(data)
+    dup_names <- unique(col_names[duplicated(col_names)])
+    data_subset <- data[, !col_names %in% dup_names]
+    # Add summed columns for each duplicated name
+    for (dup_name in dup_names) {
+      cols <- which(col_names == dup_name)
+      data_subset[[dup_name]] <- rowSums(data[, cols])
+    }
+    if (SGB9226 == TRUE) {
+      data <- bind_cols(data_subset, akk_sgb9226_ab)
+    }
+    if (SGB9226 == FALSE) {
+      data <- data_subset
+    }
+  }
+  
+  if (taxonomy_database == "SGB_Jan21") {
+    data <- data[,colnames(data)[which(unlist(lapply(colnames(data), function(x) {length(unlist(strsplit(x, "\\|"))) })) == 8)]]
+    colnames(data) <- unlist(lapply(colnames(data), function(x) {unlist(strsplit(x, "\\|"))[8] } ))
+    colnames(data) <- gsub("t__", "", colnames(data))
+    col_names <- names(data)
+    dup_names <- unique(col_names[duplicated(col_names)])
+    if (length(dup_names) > 0) {
+      stop(paste0("There are duplicate SGB ids in your table;\n", paste0(dup_names, collapse = ';'),"\n Please check the merging of the profiles prior to uploading the table."))
+    }
+  }
   
   # Read signature species
   sig1_species <- read.table("data/sig1.txt", stringsAsFactors = FALSE, header = T, sep = "\t")
@@ -72,7 +145,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     }
   })
   
-  if (taxonomy_database != "SGB_Jan21") {
+  if ((taxonomy_database == "species_Jan21" & SGB9226 == FALSE) | taxonomy_database %in% c("GTDB_r207", "GTDB_r220")) {
     results <- data %>% rowwise() %>%
       mutate(
         Akk_status = case_when(
@@ -100,13 +173,13 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     )
     return(results)
   }
-  if (taxonomy_database == "SGB_Jan21") {
+  if (taxonomy_database == "SGB_Jan21" | (taxonomy_database == "species_Jan21" & SGB9226 == TRUE)) {
     results <- data %>% rowwise() %>%
       mutate(
         Akk_status = case_when(
-          sum(c_across(all_of(grep("SGB9226", colnames(data), perl = T))), na.rm = TRUE) >= 4.799 ~ "High",
-          sum(c_across(all_of(grep("SGB9226", colnames(data), perl = T))), na.rm = TRUE) == 0 ~ "Zero",
-          sum(c_across(all_of(grep("SGB9226", colnames(data), perl = T))), na.rm = TRUE) > 0 & sum(c_across(all_of(grep("SGB9226", colnames(data), perl = T))), na.rm = TRUE) < 4.799 ~ "Normal"),
+          sum(c_across(all_of(grep("SGB9226$", colnames(data), perl = T))), na.rm = TRUE) >= 4.799 ~ "High",
+          sum(c_across(all_of(grep("SGB9226$", colnames(data), perl = T))), na.rm = TRUE) == 0 ~ "Zero",
+          sum(c_across(all_of(grep("SGB9226$", colnames(data), perl = T))), na.rm = TRUE) > 0 & sum(c_across(all_of(grep("SGB9226$", colnames(data), perl = T))), na.rm = TRUE) < 4.799 ~ "Normal"),
         # Updated Toposcore classification
         Toposcore = case_when(
           SIG_class == "SIG1" ~ "SIG1+",

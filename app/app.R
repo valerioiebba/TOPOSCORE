@@ -19,8 +19,8 @@ ui <- fluidPage(
       # File upload and calculate button group
       fluidRow(
         column(8,
-               fileInput("file", "Upload microbiome data TSV file",
-                         accept = c("text/tsv", "text/tab-separated-values,text/plain", ".tsv"))
+               fileInput("file", "Upload microbiome tab-separated data",
+                         accept = c("text/tsv", "text/tab-separated-values,text/plain", ".txt/.tsv"))
         ),
         selectInput("Level", "Select taxonomy level and database", choices = c("Species - MetaPhlAn 4 vJan21", "SGB - MetaPhlAn 4 vJan21", "Species - GTDB r207", "Species - GTDB r220")),
         column(4,
@@ -32,14 +32,15 @@ ui <- fluidPage(
       
       # Input data template section
       h4("Input Data Requirements:"),
-      HTML("<p><strong>Required columns:</strong></p>
+      HTML("<p>The input table should be a multi-level taxa (rows) x samples (columns) data frame.</p>
+      <p><strong>Required column:</strong></p>
            <ul>
-             <li>Sample_id: Unique identifier for each sample</li>
-             <li>Bacterial species columns: Relative abundance values</li>
-             <li>Akkermansia_muciniphila: Required for classification</li>
-           </ul>"),
-      
-      downloadButton("download_template", "Download Template File"),
+             <li>clade_name: Full level taxonomy for each taxon at different taxonomic levels</li>
+           </ul>
+      <p><strong>For MetaPhlAn 4 options, the required input is the output of the <a href='https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4#merging-tables'>merge_metaphlan_tables.py</a> command</strong></p>"),
+      downloadButton("download_template", "Download MetaPhlAn 4 Template File"),
+      HTML("<p><strong>For GTDB options, the required input can be output of running the <a href='https://github.com/bluenote-1577/sylph/wiki/Taxonomic-profiling-with-the-GTDB‐R214-database'>Sylph wiki</a> and merging profiles </strong></p>"),
+      downloadButton("download_template_gtdb", "Download Sylph GTDB Template File"),
       
       # Display summary stats
       hr(),
@@ -225,10 +226,19 @@ server <- function(input, output, session) {
   # Add template download handler
   output$download_template <- downloadHandler(
     filename = function() {
-      "template_met4_valid_10rows.tsv"
+      "template_mpa4_vJan21_test_data.tsv"
     },
     content = function(file) {
-      file.copy("data/met4_valid_10rows.tsv", file)
+      file.copy("data/mpa4_vJan21_test_data.tsv", file)
+    }
+  )
+  
+  output$download_template_gtdb <- downloadHandler(
+    filename = function() {
+      "template_sylph_GTDBr220_test_data.tsv"
+    },
+    content = function(file) {
+      file.copy("data/sylph_GTDBr220_test_data.tsv", file)
     }
   )
   
