@@ -25,6 +25,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
       stop("It appears as the taxonomy separator in your table is not in standard GTDB format, i.e d__;p__")
     }
     else {
+      SGB9226 <- FALSE
       taxa <- data$clade_name
       data <- data %>% select(-clade_name)
       sampleIDs <- colnames(data)

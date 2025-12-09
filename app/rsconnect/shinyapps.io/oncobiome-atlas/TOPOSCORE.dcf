@@ -5,6 +5,6 @@ account: oncobiome-atlas
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15490938
-bundleId: 11291401
+bundleId: 11296882
 url: https://oncobiome-atlas.shinyapps.io/TOPOSCORE/
 version: 1
