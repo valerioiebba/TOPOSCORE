@@ -72,6 +72,10 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
   }
   
   if (taxonomy_database == "SGB_Jan21") {
+    SGB9226 <- ifelse(length(grep("SGB9226$", colnames(data))) > 0, TRUE, FALSE)
+    if(SGB9226 == FALSE) {
+      akk <- data %>% select(grep("muciniphila$", colnames(data)))
+    }
     data <- data[,colnames(data)[which(unlist(lapply(colnames(data), function(x) {length(unlist(strsplit(x, "\\|"))) })) == 8)]]
     colnames(data) <- unlist(lapply(colnames(data), function(x) {unlist(strsplit(x, "\\|"))[8] } ))
     colnames(data) <- gsub("t__", "", colnames(data))
@@ -79,6 +83,9 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     dup_names <- unique(col_names[duplicated(col_names)])
     if (length(dup_names) > 0) {
       stop(paste0("There are duplicate SGB ids in your table;\n", paste0(dup_names, collapse = ';'),"\n Please check the merging of the profiles prior to uploading the table."))
+    }
+    if(SGB9226 == FALSE) {
+      data <- bind_cols(data, akk)
     }
   }
   
@@ -146,7 +153,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     }
   })
   
-  if ((taxonomy_database == "species_Jan21" & SGB9226 == FALSE) | taxonomy_database %in% c("GTDB_r207", "GTDB_r220")) {
+  if ((taxonomy_database == "species_Jan21" & SGB9226 == FALSE) | taxonomy_database %in% c("GTDB_r207", "GTDB_r220") | (taxonomy_database == "SGB_Jan21" & SGB9226 == FALSE)) {
     results <- data %>% rowwise() %>%
       mutate(
         Akk_status = case_when(
@@ -174,7 +181,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     )
     return(results)
   }
-  if (taxonomy_database == "SGB_Jan21" | (taxonomy_database == "species_Jan21" & SGB9226 == TRUE)) {
+  if ((taxonomy_database == "SGB_Jan21" & SGB9226 == TRUE) | (taxonomy_database == "species_Jan21" & SGB9226 == TRUE)) {
     results <- data %>% rowwise() %>%
       mutate(
         Akk_status = case_when(
