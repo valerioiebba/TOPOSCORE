@@ -1,10 +1,10 @@
 library(dplyr)
 library(readr)
 
-calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21", "SGB_Jan21", "GTDB_r207", "GTDB_r220")) {
+calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21", "SGB_Jan21", "SGB_Jun23", "GTDB_r207", "GTDB_r220")) {
   
   # Read-in the data for MetaPhlAn format
-  if(taxonomy_database == "species_Jan21" | taxonomy_database == "SGB_Jan21") {
+  if(taxonomy_database == "species_Jan21" | taxonomy_database == "SGB_Jan21" | taxonomy_database == "SGB_Jun23") {
     data <- read_tsv(input_file, name_repair = "minimal", comment = "#")
     if(length(grep("\\|", data$clade_name)) == 0) {
       stop("It appears as the taxonomy separator in your table is not in standard MetaPhlAn format, i.e k__|p__")
@@ -71,7 +71,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     }
   }
   
-  if (taxonomy_database == "SGB_Jan21") {
+  if (taxonomy_database == "SGB_Jan21" | taxonomy_database == "SGB_Jun23") {
     SGB9226 <- ifelse(length(grep("SGB9226$", colnames(data))) > 0, TRUE, FALSE)
     if(SGB9226 == FALSE) {
       akk <- data %>% select(grep("muciniphila$", colnames(data)))
@@ -153,7 +153,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     }
   })
   
-  if ((taxonomy_database == "species_Jan21" & SGB9226 == FALSE) | taxonomy_database %in% c("GTDB_r207", "GTDB_r220") | (taxonomy_database == "SGB_Jan21" & SGB9226 == FALSE)) {
+  if ((taxonomy_database == "species_Jan21" & SGB9226 == FALSE) | taxonomy_database %in% c("GTDB_r207", "GTDB_r220") | (taxonomy_database == "SGB_Jan21" & SGB9226 == FALSE) | (taxonomy_database == "SGB_Jun23" & SGB9226 == FALSE)) {
     results <- data %>% rowwise() %>%
       mutate(
         Akk_status = case_when(
@@ -181,7 +181,7 @@ calculate_toposcore <- function(input_file, taxonomy_database = c("species_Jan21
     )
     return(results)
   }
-  if ((taxonomy_database == "SGB_Jan21" & SGB9226 == TRUE) | (taxonomy_database == "species_Jan21" & SGB9226 == TRUE)) {
+  if ((taxonomy_database == "SGB_Jan21" & SGB9226 == TRUE) | (taxonomy_database == "species_Jan21" & SGB9226 == TRUE) | (taxonomy_database == "SGB_Jun23" & SGB9226 == TRUE)) {
     results <- data %>% rowwise() %>%
       mutate(
         Akk_status = case_when(
