@@ -11,6 +11,7 @@ library(ggrepel)
 # Source the calculation function
 source("R/toposcore_calc.R")
 source("R/kde_plot.R")
+options(shiny.maxRequestSize=30*1024^2)
 ui <- fluidPage(
   titlePanel("Toposcore Calculator"),
   
@@ -22,7 +23,7 @@ ui <- fluidPage(
                fileInput("file", "Upload microbiome tab-separated data",
                          accept = c("text/tsv", "text/tab-separated-values,text/plain", ".txt/.tsv"))
         ),
-        selectInput("Level", "Select taxonomy level and database", choices = c("Species - MetaPhlAn 4 vJan21", "SGB - MetaPhlAn 4 vJan21", "Species - GTDB r207", "Species - GTDB r220")),
+        selectInput("Level", "Select taxonomy level and database", choices = c("Species - MetaPhlAn 4 vJan21", "SGB - MetaPhlAn 4 vJan21", "SGB - MetaPhlAn 4 vJun23", "Species - GTDB r207", "Species - GTDB r220")),
         column(4,
                br(), # Add some spacing to align with file input
                actionButton("calculate", "Calculate Toposcore", 
@@ -294,6 +295,7 @@ server <- function(input, output, session) {
     tryCatch({
       convert_options <- c("species_Jan21" = "Species - MetaPhlAn 4 vJan21" , 
                            "SGB_Jan21" = "SGB - MetaPhlAn 4 vJan21", 
+                           "SGB_Jun23" = "SGB - MetaPhlAn 4 vJun23",
                            "GTDB_r207"= "Species - GTDB r207", 
                            "GTDB_r220" = "Species - GTDB r220")
       res <- calculate_toposcore(input$file$datapath, names(convert_options)[convert_options == input$Level])
